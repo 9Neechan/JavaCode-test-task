@@ -1,1 +1,1 @@
-DROP TABLE IF EXISTS vallet;
+DROP TABLE IF EXISTS wallet;

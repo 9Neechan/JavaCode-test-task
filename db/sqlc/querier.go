@@ -7,9 +7,9 @@ import (
 )
 
 type Querier interface {
-	CreateVallet(ctx context.Context, balance int64) (Vallet, error)
-	GetVallet(ctx context.Context, valletID int64) (Vallet, error)
-	UpdateValletBalance(ctx context.Context, arg UpdateValletBalanceParams) (Vallet, error)
+	CreateWallet(ctx context.Context, balance int64) (Wallet, error)
+	GetWallet(ctx context.Context, walletID int64) (Wallet, error)
+	UpdateWalletBalance(ctx context.Context, arg UpdateWalletBalanceParams) (Wallet, error)
 }
 
 var _ Querier = (*Queries)(nil)

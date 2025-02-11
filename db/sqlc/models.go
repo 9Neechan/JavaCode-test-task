@@ -6,8 +6,8 @@ import (
 	"time"
 )
 
-type Vallet struct {
-	ValletID  int64     `json:"vallet_id"`
+type Wallet struct {
+	WalletID  int64     `json:"wallet_id"`
 	Balance   int64     `json:"balance"`
 	CreatedAt time.Time `json:"created_at"`
 }

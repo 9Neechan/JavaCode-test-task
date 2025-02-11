@@ -2,21 +2,18 @@ package api
 
 import (
 	db "github.com/9Neechan/JavaCode-test-task/db/sqlc"
-	"github.com/9Neechan/JavaCode-test-task/util"
 
 	"github.com/gin-gonic/gin"
 )
 
 type Server struct {
-	config util.Config
 	store  db.Store // *
 	router *gin.Engine
 }
 
-func NewServer(config util.Config, store db.Store) (*Server, error) {
+func NewServer(store db.Store) (*Server, error) {
 	server := &Server{
-		config: config,
-		store:  store,
+		store: store,
 	}
 
 	server.setupRouter()
@@ -26,11 +23,19 @@ func NewServer(config util.Config, store db.Store) (*Server, error) {
 func (server *Server) setupRouter() {
 	router := gin.Default()
 
-	router.POST("api/v1/wallet", server.update)     // http://localhost:8080/users
-	router.GET("api/v1/wallets/:id", server.get) // http://localhost:8080/accounts/214 api/v1/wallets/{WALLET_UUID}
+	router.POST("api/v1/wallet", server.updateWalletBalance)  // http://localhost:8080/api/v1/wallet
+	router.GET("api/v1/wallets/:wallet_id", server.getWallet) // http://localhost:8080/api/v1/wallets/:wallet_id
 
 	server.router = router
 }
+
+/*
+{
+  "amount": 100,
+  "wallet_id": 1,
+  "operation_type": "WITHDRAW"
+}
+  */
 
 func (server *Server) Start(address string) error {
 	return server.router.Run(address)

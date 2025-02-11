@@ -3,8 +3,8 @@ module github.com/9Neechan/JavaCode-test-task
 go 1.23.5
 
 require (
-	github.com/9Neechan/simple-bank v0.0.0-20250210182443-7f1cb6c06228
 	github.com/gin-gonic/gin v1.10.0
+	github.com/golang/mock v1.6.0
 	github.com/lib/pq v1.10.9
 	github.com/spf13/viper v1.19.0
 	github.com/stretchr/testify v1.10.0
