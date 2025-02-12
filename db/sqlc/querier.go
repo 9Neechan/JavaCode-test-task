@@ -4,11 +4,13 @@ package db
 
 import (
 	"context"
+
+	"github.com/google/uuid"
 )
 
 type Querier interface {
 	CreateWallet(ctx context.Context, balance int64) (Wallet, error)
-	GetWallet(ctx context.Context, walletID int64) (Wallet, error)
+	GetWallet(ctx context.Context, walletUuid uuid.UUID) (Wallet, error)
 	UpdateWalletBalance(ctx context.Context, arg UpdateWalletBalanceParams) (Wallet, error)
 }
 

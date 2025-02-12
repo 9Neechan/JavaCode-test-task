@@ -8,9 +8,9 @@ INSERT INTO wallet (
 -- name: UpdateWalletBalance :one
 UPDATE wallet
 SET balance = balance + sqlc.arg(amount)
-WHERE wallet_id = sqlc.arg(wallet_id)
+WHERE wallet_uuid = sqlc.arg(wallet_uuid)
 RETURNING *;
 
 -- name: GetWallet :one
 SELECT * FROM wallet
-WHERE wallet_id = $1 LIMIT 1;
+WHERE wallet_uuid = $1 LIMIT 1;

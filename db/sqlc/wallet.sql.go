@@ -5,6 +5,8 @@ package db
 
 import (
 	"context"
+
+	"github.com/google/uuid"
 )
 
 const createWallet = `-- name: CreateWallet :one
@@ -12,43 +14,43 @@ INSERT INTO wallet (
   balance
 ) VALUES (
   $1
-) RETURNING wallet_id, balance, created_at
+) RETURNING wallet_uuid, balance, created_at
 `
 
 func (q *Queries) CreateWallet(ctx context.Context, balance int64) (Wallet, error) {
 	row := q.db.QueryRowContext(ctx, createWallet, balance)
 	var i Wallet
-	err := row.Scan(&i.WalletID, &i.Balance, &i.CreatedAt)
+	err := row.Scan(&i.WalletUuid, &i.Balance, &i.CreatedAt)
 	return i, err
 }
 
 const getWallet = `-- name: GetWallet :one
-SELECT wallet_id, balance, created_at FROM wallet
-WHERE wallet_id = $1 LIMIT 1
+SELECT wallet_uuid, balance, created_at FROM wallet
+WHERE wallet_uuid = $1 LIMIT 1
 `
 
-func (q *Queries) GetWallet(ctx context.Context, walletID int64) (Wallet, error) {
-	row := q.db.QueryRowContext(ctx, getWallet, walletID)
+func (q *Queries) GetWallet(ctx context.Context, walletUuid uuid.UUID) (Wallet, error) {
+	row := q.db.QueryRowContext(ctx, getWallet, walletUuid)
 	var i Wallet
-	err := row.Scan(&i.WalletID, &i.Balance, &i.CreatedAt)
+	err := row.Scan(&i.WalletUuid, &i.Balance, &i.CreatedAt)
 	return i, err
 }
 
 const updateWalletBalance = `-- name: UpdateWalletBalance :one
 UPDATE wallet
 SET balance = balance + $1
-WHERE wallet_id = $2
-RETURNING wallet_id, balance, created_at
+WHERE wallet_uuid = $2
+RETURNING wallet_uuid, balance, created_at
 `
 
 type UpdateWalletBalanceParams struct {
-	Amount   int64 `json:"amount"`
-	WalletID int64 `json:"wallet_id"`
+	Amount     int64     `json:"amount"`
+	WalletUuid uuid.UUID `json:"wallet_uuid"`
 }
 
 func (q *Queries) UpdateWalletBalance(ctx context.Context, arg UpdateWalletBalanceParams) (Wallet, error) {
-	row := q.db.QueryRowContext(ctx, updateWalletBalance, arg.Amount, arg.WalletID)
+	row := q.db.QueryRowContext(ctx, updateWalletBalance, arg.Amount, arg.WalletUuid)
 	var i Wallet
-	err := row.Scan(&i.WalletID, &i.Balance, &i.CreatedAt)
+	err := row.Scan(&i.WalletUuid, &i.Balance, &i.CreatedAt)
 	return i, err
 }

@@ -4,10 +4,12 @@ package db
 
 import (
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type Wallet struct {
-	WalletID  int64     `json:"wallet_id"`
-	Balance   int64     `json:"balance"`
-	CreatedAt time.Time `json:"created_at"`
+	WalletUuid uuid.UUID `json:"wallet_uuid"`
+	Balance    int64     `json:"balance"`
+	CreatedAt  time.Time `json:"created_at"`
 }

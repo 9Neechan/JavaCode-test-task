@@ -23,19 +23,20 @@ func NewServer(store db.Store) (*Server, error) {
 func (server *Server) setupRouter() {
 	router := gin.Default()
 
-	router.POST("api/v1/wallet", server.updateWalletBalance)  // http://localhost:8080/api/v1/wallet
-	router.GET("api/v1/wallets/:wallet_id", server.getWallet) // http://localhost:8080/api/v1/wallets/:wallet_id
+	router.POST("api/v1/wallet", server.updateWalletBalance) // http://localhost:8080/api/v1/wallet
+	router.GET("api/v1/wallets/:id", server.getWallet)       // http://localhost:8080/api/v1/wallets/:id
 
 	server.router = router
 }
 
 /*
+POST
 {
   "amount": 100,
-  "wallet_id": 1,
+  "wallet_uuid": 7ff05ab9-80d5-40d0-8037-7133da806e49,
   "operation_type": "WITHDRAW"
 }
-  */
+*/
 
 func (server *Server) Start(address string) error {
 	return server.router.Run(address)

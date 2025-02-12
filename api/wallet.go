@@ -6,11 +6,13 @@ import (
 
 	db "github.com/9Neechan/JavaCode-test-task/db/sqlc"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	_ "github.com/lib/pq"
 )
 
+// gin не может корректно распарсить uuid, пожтому используем string
 type getWalletRequest struct {
-	WalletID int64 `uri:"wallet_id" binding:"min=1"`
+	WalletUuid string `uri:"id" binding:"required,uuid"`
 }
 
 func (server *Server) getWallet(ctx *gin.Context) {
@@ -20,7 +22,13 @@ func (server *Server) getWallet(ctx *gin.Context) {
 		return
 	}
 
-	wallet, err := server.store.GetWallet(ctx, req.WalletID)
+	parsedUUID, err := uuid.Parse(req.WalletUuid)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid UUID format"})
+		return
+	}
+
+	wallet, err := server.store.GetWallet(ctx, parsedUUID)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			ctx.JSON(http.StatusNotFound, errorResponse(err))
@@ -35,9 +43,9 @@ func (server *Server) getWallet(ctx *gin.Context) {
 }
 
 type UpdateWalletBalanceRequest struct {
-	Amount        int64  `json:"amount"`
-	WalletID      int64  `json:"wallet_id"`
-	OperationType string `json:"operation_type"`
+	WalletUuid    uuid.UUID `json:"wallet_uuid" binding:"required,uuid"`
+	Amount        int64     `json:"amount" binding:"required,ne=0"`
+	OperationType string    `json:"operation_type" binding:"required,oneof=DEPOSIT WITHDRAW"`
 }
 
 func (server *Server) updateWalletBalance(ctx *gin.Context) {
@@ -52,8 +60,8 @@ func (server *Server) updateWalletBalance(ctx *gin.Context) {
 	}
 
 	arg := db.UpdateWalletBalanceParams{
-		Amount:   req.Amount,
-		WalletID: req.WalletID,
+		Amount:     req.Amount,
+		WalletUuid: req.WalletUuid,
 	}
 
 	wallet, err := server.store.UpdateWalletBalance(ctx, arg)

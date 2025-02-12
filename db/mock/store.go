@@ -10,6 +10,7 @@ import (
 
 	db "github.com/9Neechan/JavaCode-test-task/db/sqlc"
 	gomock "github.com/golang/mock/gomock"
+	uuid "github.com/google/uuid"
 )
 
 // MockStore is a mock of Store interface.
@@ -51,7 +52,7 @@ func (mr *MockStoreMockRecorder) CreateWallet(arg0, arg1 interface{}) *gomock.Ca
 }
 
 // GetWallet mocks base method.
-func (m *MockStore) GetWallet(arg0 context.Context, arg1 int64) (db.Wallet, error) {
+func (m *MockStore) GetWallet(arg0 context.Context, arg1 uuid.UUID) (db.Wallet, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetWallet", arg0, arg1)
 	ret0, _ := ret[0].(db.Wallet)
