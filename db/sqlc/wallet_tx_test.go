@@ -148,8 +148,8 @@ func TestTransferTxDeadlock(t *testing.T) {
 	wallet := createRandomWallet(t)
 	fmt.Println("  >> before:", wallet.Balance)
 
-	n := 10
-	amount := int64(10)
+	n := 20
+	amount := int64(1)
 	errs := make(chan error)
 
 	// запускаем n одновременных транзакций перевода

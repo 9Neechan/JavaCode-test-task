@@ -16,7 +16,7 @@ func RandomInt(min, max int64) int64 {
 }
 
 func RandomMoney() int64 {
-	return RandomInt(100, 1000)
+	return RandomInt(1000, 10000)
 }
 
 func RandomUUID() uuid.UUID {
