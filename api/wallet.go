@@ -10,7 +10,7 @@ import (
 	_ "github.com/lib/pq"
 )
 
-// gin не может корректно распарсить uuid, пожтому используем string
+// gin не может корректно распарсить uuid из uri, пожтому используем string
 type getWalletRequest struct {
 	WalletUuid string `uri:"id" binding:"required,uuid"`
 }
@@ -44,7 +44,7 @@ func (server *Server) getWallet(ctx *gin.Context) {
 
 type UpdateWalletBalanceRequest struct {
 	WalletUuid    uuid.UUID `json:"wallet_uuid" binding:"required,uuid"`
-	Amount        int64     `json:"amount" binding:"required,ne=0"`
+	Amount        int64     `json:"amount" binding:"required,gt=0"`
 	OperationType string    `json:"operation_type" binding:"required,oneof=DEPOSIT WITHDRAW"`
 }
 
@@ -55,22 +55,14 @@ func (server *Server) updateWalletBalance(ctx *gin.Context) {
 		return
 	}
 
-	if req.OperationType == "WITHDRAW" {
-		req.Amount = -req.Amount
-	}
-
-	arg := db.UpdateWalletBalanceParams{
+	arg := db.TransferTxParams{
 		Amount:     req.Amount,
 		WalletUuid: req.WalletUuid,
+		OperationType: req.OperationType,
 	}
 
-	wallet, err := server.store.UpdateWalletBalance(ctx, arg)
+	wallet, err := server.store.TransferTx(ctx, arg)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			ctx.JSON(http.StatusNotFound, errorResponse(err))
-			return
-		}
-
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
