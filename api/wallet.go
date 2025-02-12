@@ -28,6 +28,11 @@ func (server *Server) getWallet(ctx *gin.Context) {
 		return
 	}
 
+	if parsedUUID == uuid.Nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid UUID: UUID is nil"})
+		return
+	}
+
 	wallet, err := server.store.GetWallet(ctx, parsedUUID)
 	if err != nil {
 		if err == sql.ErrNoRows {

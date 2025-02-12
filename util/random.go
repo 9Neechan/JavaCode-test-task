@@ -3,6 +3,7 @@ package util
 import (
 	"time"
 
+	"github.com/google/uuid"
 	"golang.org/x/exp/rand"
 )
 
@@ -16,4 +17,8 @@ func RandomInt(min, max int64) int64 {
 
 func RandomMoney() int64 {
 	return RandomInt(100, 1000)
+}
+
+func RandomUUID() uuid.UUID {
+	return uuid.New()
 }
