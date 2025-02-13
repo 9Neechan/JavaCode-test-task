@@ -224,6 +224,22 @@ func TestUpdateWalletBalanceAPI(t *testing.T) {
 			},
 		},
 		{
+			name:       "InvalidUUID: UUID is nil",
+			body: gin.H{
+				"wallet_uuid":    uuid.Nil,
+				"amount":         1000,
+				"operation_type": "WITHDRAW",
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					GetWallet(gomock.Any(), gomock.Any()).
+					Times(0)
+			},
+			checkResponse: func(recorder *httptest.ResponseRecorder) {
+				require.Equal(t, http.StatusBadRequest, recorder.Code)
+			},
+		},
+		{
 			name: "Invalid amount",
 			body: gin.H{
 				"wallet_uuid":    wallet.WalletUuid,

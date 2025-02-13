@@ -24,7 +24,7 @@ func (server *Server) getWallet(ctx *gin.Context) {
 
 	parsedUUID, err := uuid.Parse(req.WalletUuid)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid UUID format"})
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid UUID format"}) // нельхя покрыть тестами
 		return
 	}
 
@@ -48,9 +48,9 @@ func (server *Server) getWallet(ctx *gin.Context) {
 }
 
 type UpdateWalletBalanceRequest struct {
-	WalletUuid    uuid.UUID `json:"wallet_uuid" binding:"required,uuid"`
-	Amount        int64     `json:"amount" binding:"required,gt=0"`
-	OperationType string    `json:"operation_type" binding:"required,oneof=DEPOSIT WITHDRAW"`
+	WalletUuid    string `json:"wallet_uuid" binding:"required,uuid"`
+	Amount        int64  `json:"amount" binding:"required,gt=0"`
+	OperationType string `json:"operation_type" binding:"required,oneof=DEPOSIT WITHDRAW"`
 }
 
 func (server *Server) updateWalletBalance(ctx *gin.Context) {
@@ -60,9 +60,20 @@ func (server *Server) updateWalletBalance(ctx *gin.Context) {
 		return
 	}
 
+	parsedUUID, err := uuid.Parse(req.WalletUuid)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid UUID format"}) // нельзя покрыть тестами
+		return
+	}
+
+	if parsedUUID == uuid.Nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid UUID: UUID is nil"})
+		return
+	}
+
 	arg := db.TransferTxParams{
-		Amount:     req.Amount,
-		WalletUuid: req.WalletUuid,
+		Amount:        req.Amount,
+		WalletUuid:    parsedUUID,
 		OperationType: req.OperationType,
 	}
 

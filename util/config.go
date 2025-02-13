@@ -9,6 +9,10 @@ type Config struct {
 	DBSource      string `mapstructure:"DB_SOURCE"`
 	ServerAddress string `mapstructure:"SERVER_ADDRESS"`
 
+	RedisAddr     string `mapstructure:"REDIS_ADDRESS"`
+	RedisPassword string `mapstructure:"REDIS_PASSWORD"`
+	RedisDB       int    `mapstructure:"REDIS_DB"`
+
 	Environment  string `mapstructure:"ENVIRONMENT"`
 	MigrationURL string `mapstructure:"MIGRATION_URL"`
 }
