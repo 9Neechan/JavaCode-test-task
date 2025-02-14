@@ -13,6 +13,8 @@ type Config struct {
 	RedisPassword string `mapstructure:"REDIS_PASSWORD"`
 	RedisDB       int    `mapstructure:"REDIS_DB"`
 
+	AmpqURL string `mapstructure:"AMPQ_URL"`
+
 	Environment  string `mapstructure:"ENVIRONMENT"`
 	MigrationURL string `mapstructure:"MIGRATION_URL"`
 }

@@ -15,10 +15,13 @@ services:
       environment:
         - DB_SOURCE=postgresql://root:secret@postgres:5432/wallet_bank?sslmode=disable
         - REDIS_ADDRESS=redis:6379
+        - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
       depends_on:
         - postgres
         - redis
-      entrypoint: ["/app/wait-for.sh", "postgres:5432", "--", "/app/start.sh"]
+        - rabbitmq
+      entrypoint: ["/app/wait-for.sh", "postgres:5432", "--", "/app/wait-for.sh", "rabbitmq:5672", "--", "/app/start.sh"]
+      #entrypoint: ["/app/wait-for.sh", "postgres:5432","rabbitmq:5672", "--", "/app/start.sh"]
       command: ["./main"]
 
     redis:
@@ -29,8 +32,25 @@ services:
         - redis_data:/data
       command: ["redis-server", "--appendonly", "yes"]
 
+    rabbitmq:
+      image: rabbitmq:3-management
+      container_name: rabbitmq
+      restart: always
+      ports:
+        - "5672:5672"    # Основной порт для сообщений
+        - "15672:15672"  # UI Management (можно открыть в браузере)
+      environment:
+        - RABBITMQ_DEFAULT_USER=guest
+        - RABBITMQ_DEFAULT_PASS=guest
+      volumes:
+        - rabbitmq_data:/var/lib/rabbitmq
+
+    
+
 volumes:
   postgres_data:
     driver: local
   redis_data:
+    driver: local
+  rabbitmq_data:
     driver: local

@@ -2,18 +2,26 @@ package api
 
 import (
 	db "github.com/9Neechan/JavaCode-test-task/db/sqlc"
+	"github.com/9Neechan/JavaCode-test-task/rabbitmq"
 
 	"github.com/gin-gonic/gin"
 )
 
 type Server struct {
-	store  db.Store // *
-	router *gin.Engine
+	store    db.Store
+	router   *gin.Engine
+	rabbitMQ *rabbitmq.RabbitMQ
 }
 
-func NewServer(store db.Store) (*Server, error) {
+func NewServer(store db.Store, rabbitClient *rabbitmq.RabbitMQ) (*Server, error) {
 	server := &Server{
-		store: store,
+		store:    store,
+		rabbitMQ: rabbitClient,
+	}
+
+	// Запускаем обработчик сообщений RabbitMQ
+	for i := 0; i < 10; i++ {
+		go rabbitClient.ConsumeMessages("wallet_updates", server.processUpdateWallet)
 	}
 
 	server.setupRouter()
@@ -23,23 +31,16 @@ func NewServer(store db.Store) (*Server, error) {
 func (server *Server) setupRouter() {
 	router := gin.Default()
 
+	// без балансировки назрузки
 	//router.POST("api/v1/wallet", server.updateWalletBalance) // http://localhost:8080/api/v1/wallet
 	//router.GET("api/v1/wallets/:id", server.getWallet)       // http://localhost:8080/api/v1/wallets/:id
 
-	router.POST("api/v1/wallet", server.updateWalletBalanceRedis) // http://localhost:8080/api/v1/wallet
-	router.GET("api/v1/wallets/:id", server.getWalletRedis)       // http://localhost:8080/api/v1/wallets/:id
+	// попытка балансировки с помощью Redis RabbitMQ
+	router.POST("api/v1/wallet", server.updateWalletBalanceRabbitmq)
+	router.GET("api/v1/wallets/:id", server.getWalletRedis)
 
 	server.router = router
 }
-
-/*
-POST
-{
-  "amount": 1,
-  "wallet_uuid": "7ff05ab9-80d5-40d0-8037-7133da806e49",
-  "operation_type": "DEPOSIT"
-}
-*/
 
 func (server *Server) Start(address string) error {
 	return server.router.Run(address)

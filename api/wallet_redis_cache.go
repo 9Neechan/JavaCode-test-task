@@ -4,9 +4,9 @@ import (
 	"database/sql"
 	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
-	db "github.com/9Neechan/JavaCode-test-task/db/sqlc"
 	"github.com/9Neechan/JavaCode-test-task/redis_cache"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -28,35 +28,43 @@ func (server *Server) getWalletRedis(ctx *gin.Context) {
 
 	cacheKey := fmt.Sprintf("wallet:%s", parsedUUID.String())
 
-	// Проверяем кэш Redis
+	// 1. Читаем баланс из Redis
 	cachedBalance, err := redis_cache.RedisClient.Get(ctx, cacheKey).Result()
 	if err == nil {
-		// Данные найдены в кэше
-		ctx.JSON(http.StatusOK, gin.H{"source": "cache", "balance": cachedBalance})
+		// Если баланс найден в кэше, парсим и возвращаем
+		balance, parseErr := strconv.ParseInt(cachedBalance, 10, 64)
+		if parseErr != nil {
+			fmt.Println("Ошибка парсинга баланса из Redis:", parseErr)
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse cached balance"})
+			return
+		}
+
+		ctx.JSON(http.StatusOK, gin.H{"source": "cache", "balance": balance})
 		return
 	}
 
-	// Запрашиваем данные из БД
+	// 2. Если данных нет в Redis → запрашиваем из БД
 	wallet, err := server.store.GetWallet(ctx, parsedUUID)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			ctx.JSON(http.StatusNotFound, errorResponse(err))
+			ctx.JSON(http.StatusNotFound, gin.H{"error": "Wallet not found"})
 			return
 		}
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
 
-	// Кэшируем баланс в Redis на 5 sec
+	// 3. Записываем данные в Redis с TTL = 5 секунд
 	err = redis_cache.RedisClient.Set(ctx, cacheKey, wallet.Balance, 5*time.Second).Err()
 	if err != nil {
-		fmt.Println("Ошибка записи в Redis:", err) // Логируем, но не прерываем выполнение
+		fmt.Println("Ошибка записи в Redis:", err) // Логируем, но продолжаем выполнение
 	}
 
+	// 4. Возвращаем данные из БД
 	ctx.JSON(http.StatusOK, gin.H{"source": "db", "balance": wallet.Balance})
 }
 
-func (server *Server) updateWalletBalanceRedis(ctx *gin.Context) {
+/*func (server *Server) updateWalletBalanceRedis(ctx *gin.Context) {
 	var req UpdateWalletBalanceRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
@@ -90,5 +98,4 @@ func (server *Server) updateWalletBalanceRedis(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{"message": "Balance updated", "wallet": wallet})
-}
-
+}*/

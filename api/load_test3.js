@@ -7,22 +7,22 @@ export let options = {
       executor: 'constant-arrival-rate',
       rate: 500, // запросов в секунду
       timeUnit: '1s',
-      duration: '50s', // Общая длительность теста
-      preAllocatedVUs: 500, // Начальное число виртуальных пользователей
-      maxVUs: 750, // Максимальное число виртуальных пользователей
+      duration: '50s', 
+      preAllocatedVUs: 500,
+      maxVUs: 1000,
     },
     update_wallet: {
       executor: 'constant-arrival-rate',
-      rate: 500, // запросов в секунду
+      rate: 500,
       timeUnit: '1s',
       duration: '50s',
       preAllocatedVUs: 500,
-      maxVUs: 750,
+      maxVUs: 1000,
     },
   },
   thresholds: {
-    http_req_duration: ['p(95)<500'], // 95% запросов должны быть <500ms
-    http_req_failed: ['rate<0.01'],   // Ошибок должно быть <1%
+    http_req_duration: ['p(95)<500'],
+    http_req_failed: ['rate<0.01'],
   },
 };
 
@@ -46,12 +46,34 @@ export function updateWallet() {
   });
 
   let headers = { 'Content-Type': 'application/json' };
+  
+  // Отправка в очередь RabbitMQ через API
+  //let res = http.post(`${BASE_URL}/wallet/queue`, payload, { headers });
   let res = http.post(`${BASE_URL}/wallet`, payload, { headers });
 
   check(res, {
-    'POST status is 200': (r) => r.status === 200,
-    'POST response time < 500ms': (r) => r.timings.duration < 500
+    'POST status is 202': (r) => r.status === 202, // Теперь ждем 202, так как обработка асинхронная
   });
+
+  if (res.status === 202) {
+    // Пытаемся получить статус обновления через polling
+    let maxRetries = 5;
+    let attempt = 0;
+    
+    while (attempt < maxRetries) {
+      sleep(0.5); // Подождем 500 мс перед следующим запросом
+      let checkRes = http.get(`${BASE_URL}/wallets/${WALLET_ID}/status`);
+
+      if (checkRes.status === 200) {
+        let jsonResponse = checkRes.json();
+        if (jsonResponse.status === "COMPLETED") {
+          check(checkRes, { 'Update completed successfully': () => true });
+          return;
+        }
+      }
+      attempt++;
+    }
+  }
 }
 
 // Разделяем выполнение тестов по сценариям
