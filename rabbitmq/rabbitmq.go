@@ -5,15 +5,31 @@ import (
 	"fmt"
 	"log"
 
-	db "github.com/9Neechan/JavaCode-test-task/db/sqlc"
+	//db "github.com/9Neechan/JavaCode-test-task/db/sqlc"
+	mockrabbitmq "github.com/9Neechan/JavaCode-test-task/rabbitmq/mock"
+	"github.com/golang/mock/gomock"
 	"github.com/streadway/amqp"
 )
 
+type AMQPChannel interface {
+	Publish(exchange, key string, mandatory, immediate bool, msg amqp.Publishing) error
+	QueueDeclare(name string, durable, autoDelete, exclusive, noWait bool, args amqp.Table) (amqp.Queue, error)
+	Consume(queue, consumer string, autoAck, exclusive, noLocal, noWait bool, args amqp.Table) (<-chan amqp.Delivery, error)
+	Qos(prefetchCount, prefetchSize int, global bool) error
+	Close() error
+}
+
 type RabbitMQ struct {
 	conn    *amqp.Connection
-	channel *amqp.Channel
-	queue   amqp.Queue
-	store   db.Store
+	channel AMQPChannel // *amqp.Channel
+	//queue   amqp.Queue
+	//store   db.Store
+}
+
+func NewMockRabbitMQ(ctrl *gomock.Controller) *RabbitMQ {
+	return &RabbitMQ{
+		channel: mockrabbitmq.NewMockAMQPChannel(ctrl),
+	}
 }
 
 func NewRabbitMQ(amqpURL string) (*RabbitMQ, error) {
@@ -37,52 +53,6 @@ func NewRabbitMQ(amqpURL string) (*RabbitMQ, error) {
 		conn:    conn,
 		channel: ch,
 	}, nil
-}
-
-func (r *RabbitMQ) PublishWalletUpdate(update db.TransferTxParams) error {
-	body, err := json.Marshal(update)
-	if err != nil {
-		return fmt.Errorf("failed to marshal message: %w", err)
-	}
-
-	return r.channel.Publish(
-		"",
-		r.queue.Name,
-		false,
-		false,
-		amqp.Publishing{
-			ContentType: "application/json",
-			Body:        body,
-		},
-	)
-}
-
-func (r *RabbitMQ) processWalletUpdates() {
-	msgs, err := r.channel.Consume(
-		r.queue.Name,
-		"",
-		true,
-		false,
-		false,
-		false,
-		nil,
-	)
-	if err != nil {
-		log.Fatalf("failed to consume messages: %v", err)
-	}
-
-	for msg := range msgs {
-		var update db.TransferTxParams
-		if err := json.Unmarshal(msg.Body, &update); err != nil {
-			log.Printf("failed to unmarshal message: %v", err)
-			continue
-		}
-
-		_, err := r.store.TransferTx(nil, update)
-		if err != nil {
-			log.Printf("failed to update wallet balance: %v", err)
-		}
-	}
 }
 
 func (r *RabbitMQ) Close() {

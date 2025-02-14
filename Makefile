@@ -22,7 +22,12 @@ test:
 server:
 	go run main.go
 
-mock:
+mock_db:
 	mockgen -package mockdb -destination db/mock/store.go github.com/9Neechan/JavaCode-test-task/db/sqlc Store
 
-.PHONY: postgres createdb dropdb migrateup migratedown sqlc test server mock
+mock_rabbitmq:
+	mockgen -package mockrabbitmq -destination rabbitmq/mock/rabbitmq.go github.com/9Neechan/JavaCode-test-task/rabbitmq AMQPChannel
+
+build: postgres createdb migrateup server
+
+.PHONY: postgres createdb dropdb migrateup migratedown sqlc test server mock build

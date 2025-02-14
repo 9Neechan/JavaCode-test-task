@@ -13,12 +13,6 @@ import (
 	"github.com/google/uuid"
 )
 
-type WalletBalanceUpdate struct {
-	WalletUuid    uuid.UUID `json:"wallet_uuid"`
-	Amount        int64     `json:"amount"`
-	OperationType string    `json:"operation_type"`
-}
-
 func (server *Server) updateWalletBalanceRabbitmq(ctx *gin.Context) {
 	var req UpdateWalletBalanceRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {

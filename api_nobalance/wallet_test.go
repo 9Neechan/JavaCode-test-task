@@ -1,6 +1,6 @@
 package api
 
-/*import (
+import (
 	"bytes"
 	"database/sql"
 	"encoding/json"
@@ -40,9 +40,10 @@ func TestGetWalletAPI(t *testing.T) {
 	wallet := randomWallet()
 
 	testCases := []struct {
-		name          string
-		WalletUuid    uuid.UUID
-		buildStubs    func(store *mockdb.MockStore)
+		name       string
+		WalletUuid uuid.UUID
+		buildStubs func(store *mockdb.MockStore)
+		//buildStubsRabbit func(rabbit *rabbitmq.RabbitMQ)
 		checkResponse func(t *testing.T, recorder *httptest.ResponseRecorder)
 	}{
 		{
@@ -109,7 +110,14 @@ func TestGetWalletAPI(t *testing.T) {
 			store := mockdb.NewMockStore(ctrl)
 			tc.buildStubs(store)
 
-			server := newTestServer(t, store)
+			//mockChannel := mockrabbitmq.NewMockAMQPChannel(ctrl)
+			//rabbitmq := rabbitmq.NewMockRabbitMQ(ctrl)
+			//tc.buildStubsRabbit(rabbitmq)
+
+			//rabbitmq, err := rabbitmq.NewRabbitMQ("amqp://guest:guest@localhos:5672/")
+			//require.NoError(t, err)
+
+			server := newTestServer(t, store) // , rabbitmq)
 			recorder := httptest.NewRecorder()
 
 			url := fmt.Sprintf("/api/v1/wallets/%s", tc.WalletUuid)
@@ -124,9 +132,10 @@ func TestGetWalletAPI(t *testing.T) {
 
 func TestGetWalletAPI2(t *testing.T) {
 	testCases := []struct {
-		name          string
-		WalletUuid    string
-		buildStubs    func(store *mockdb.MockStore)
+		name       string
+		WalletUuid string
+		buildStubs func(store *mockdb.MockStore)
+		//buildStubsRabbit func(rabbit *rabbitmq.RabbitMQ)
 		checkResponse func(t *testing.T, recorder *httptest.ResponseRecorder)
 	}{
 		{
@@ -170,9 +179,10 @@ func TestUpdateWalletBalanceAPI(t *testing.T) {
 	wallet := randomWallet()
 
 	testCases := []struct {
-		name          string
-		body          gin.H
-		buildStubs    func(store *mockdb.MockStore)
+		name       string
+		body       gin.H
+		buildStubs func(store *mockdb.MockStore)
+		//buildStubsRabbit func(rabbit *rabbitmq.RabbitMQ)
 		checkResponse func(recorder *httptest.ResponseRecorder)
 	}{
 		{
@@ -224,7 +234,7 @@ func TestUpdateWalletBalanceAPI(t *testing.T) {
 			},
 		},
 		{
-			name:       "InvalidUUID: UUID is nil",
+			name: "InvalidUUID: UUID is nil",
 			body: gin.H{
 				"wallet_uuid":    uuid.Nil,
 				"amount":         1000,
@@ -325,4 +335,3 @@ func TestUpdateWalletBalanceAPI(t *testing.T) {
 			})
 	}
 }
-*/

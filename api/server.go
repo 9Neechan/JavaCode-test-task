@@ -31,13 +31,9 @@ func NewServer(store db.Store, rabbitClient *rabbitmq.RabbitMQ) (*Server, error)
 func (server *Server) setupRouter() {
 	router := gin.Default()
 
-	// без балансировки назрузки
-	//router.POST("api/v1/wallet", server.updateWalletBalance) // http://localhost:8080/api/v1/wallet
-	//router.GET("api/v1/wallets/:id", server.getWallet)       // http://localhost:8080/api/v1/wallets/:id
-
 	// попытка балансировки с помощью Redis RabbitMQ
-	router.POST("api/v1/wallet", server.updateWalletBalanceRabbitmq)
-	router.GET("api/v1/wallets/:id", server.getWalletRedis)
+	router.POST("api/v1/wallet", server.updateWalletBalanceRabbitmq) // http://localhost:8080/api/v1/wallet
+	router.GET("api/v1/wallets/:id", server.getWalletRedis)          // http://localhost:8080/api/v1/wallets/:id
 
 	server.router = router
 }

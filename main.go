@@ -4,9 +4,10 @@ import (
 	"database/sql"
 	"log"
 
-	"github.com/9Neechan/JavaCode-test-task/api"
+	//api_nobalance "github.com/9Neechan/JavaCode-test-task/api_nobalance"
+	api "github.com/9Neechan/JavaCode-test-task/api"
 	db "github.com/9Neechan/JavaCode-test-task/db/sqlc"
-	"github.com/9Neechan/JavaCode-test-task/rabbitmq"
+	rabbitmq "github.com/9Neechan/JavaCode-test-task/rabbitmq"
 	"github.com/9Neechan/JavaCode-test-task/redis_cache"
 	"github.com/9Neechan/JavaCode-test-task/util"
 	_ "github.com/lib/pq"
@@ -31,6 +32,8 @@ func main() {
 	}
 
 	store := db.NewStore(conn)
+
+	//server, err := api_nobalance.NewServer(store)
 	server, err := api.NewServer(store, rabbitClient)
 	if err != nil {
 		log.Fatal("cannot create server:", err)

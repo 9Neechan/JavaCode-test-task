@@ -63,39 +63,3 @@ func (server *Server) getWalletRedis(ctx *gin.Context) {
 	// 4. Возвращаем данные из БД
 	ctx.JSON(http.StatusOK, gin.H{"source": "db", "balance": wallet.Balance})
 }
-
-/*func (server *Server) updateWalletBalanceRedis(ctx *gin.Context) {
-	var req UpdateWalletBalanceRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, errorResponse(err))
-		return
-	}
-
-	parsedUUID, err := uuid.Parse(req.WalletUuid)
-	if err != nil || parsedUUID == uuid.Nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid UUID format"})
-		return
-	}
-
-	arg := db.TransferTxParams{
-		Amount:        req.Amount,
-		WalletUuid:    parsedUUID,
-		OperationType: req.OperationType,
-	}
-
-	// Выполняем обновление баланса в БД
-	wallet, err := server.store.TransferTx(ctx, arg)
-	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
-		return
-	}
-
-	// Удаляем кеш, чтобы после обновления API не возвращал устаревшие данные
-	cacheKey := fmt.Sprintf("wallet:%s", parsedUUID.String())
-	err = redis_cache.RedisClient.Del(ctx, cacheKey).Err()
-	if err != nil {
-		fmt.Println("Ошибка удаления кеша в Redis:", err) // Логируем, но не прерываем выполнение
-	}
-
-	ctx.JSON(http.StatusOK, gin.H{"message": "Balance updated", "wallet": wallet})
-}*/
