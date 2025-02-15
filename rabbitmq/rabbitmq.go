@@ -6,8 +6,7 @@ import (
 	"log"
 
 	//db "github.com/9Neechan/JavaCode-test-task/db/sqlc"
-	mockrabbitmq "github.com/9Neechan/JavaCode-test-task/rabbitmq/mock"
-	"github.com/golang/mock/gomock"
+
 	"github.com/streadway/amqp"
 )
 
@@ -26,12 +25,6 @@ type RabbitMQ struct {
 	//store   db.Store
 }
 
-func NewMockRabbitMQ(ctrl *gomock.Controller) *RabbitMQ {
-	return &RabbitMQ{
-		channel: mockrabbitmq.NewMockAMQPChannel(ctrl),
-	}
-}
-
 func NewRabbitMQ(amqpURL string) (*RabbitMQ, error) {
 	conn, err := amqp.Dial(amqpURL)
 	if err != nil {
@@ -46,7 +39,8 @@ func NewRabbitMQ(amqpURL string) (*RabbitMQ, error) {
 	//!!!!!!!!!!!!!
 	err = ch.Qos(50, 0, false) // Обработчик берет до 50 сообщений сразу
 	if err != nil {
-		log.Fatalf("Ошибка установки QoS: %s", err)
+		return nil, fmt.Errorf("Ошибка установки QoS: %s", err)
+		//log.Fatalf("Ошибка установки QoS: %s", err)
 	}
 
 	return &RabbitMQ{
@@ -62,26 +56,38 @@ func (r *RabbitMQ) Close() {
 
 // ConsumeMessages слушает очередь и обрабатывает сообщения
 func (r *RabbitMQ) ConsumeMessages(queueName string, handler func([]byte)) error {
+	// Проверка на nil-обработчик
+	if handler == nil {
+		return fmt.Errorf("обработчик не может быть nil")
+	}
+
+	// Проверка на пустое имя очереди
+	if queueName == "" {
+		return fmt.Errorf("ошибка объявления очереди: имя очереди не может быть пустым")
+	}
+
+	// Объявляем очередь
 	_, err := r.channel.QueueDeclare(
 		queueName,
-		true,
-		false,
-		false,
-		false,
-		nil,
+		true,  // durable
+		false, // autoDelete
+		false, // exclusive
+		false, // noWait
+		nil,   // args
 	)
 	if err != nil {
 		return fmt.Errorf("ошибка объявления очереди: %w", err)
 	}
 
+	// Получаем сообщения
 	msgs, err := r.channel.Consume(
 		queueName,
-		"",
-		true,  // auto-ack
+		"",    // consumer
+		true,  // autoAck
 		false, // exclusive
-		false,
-		false,
-		nil,
+		false, // noLocal
+		false, // noWait
+		nil,   // args
 	)
 	if err != nil {
 		return fmt.Errorf("ошибка получения сообщений: %w", err)

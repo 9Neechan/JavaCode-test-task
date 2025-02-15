@@ -13,6 +13,9 @@ migrateup:
 migratedown:
 	migrate -path db/migration -database "postgresql://root:secret@localhost:5432/wallet_bank?sslmode=disable" -verbose down
 
+rabbitmq:
+	docker run -d --name rabbitmq -p 5672:5672 -p 15672:15672 rabbitmq:3-management
+
 sqlc:
 	sqlc generate
 
@@ -28,6 +31,6 @@ mock_db:
 mock_rabbitmq:
 	mockgen -package mockrabbitmq -destination rabbitmq/mock/rabbitmq.go github.com/9Neechan/JavaCode-test-task/rabbitmq AMQPChannel
 
-build: postgres createdb migrateup server
+build: postgres rabbitmq createdb migrateup server
 
-.PHONY: postgres createdb dropdb migrateup migratedown sqlc test server mock build
+.PHONY: postgres createdb dropdb migrateup migratedown rabbitmq sqlc test server mock build

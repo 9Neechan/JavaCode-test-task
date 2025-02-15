@@ -1,8 +1,10 @@
 package rabbitmq
 
 import (
+	"encoding/json"
 	"errors"
 	"testing"
+	"time"
 
 	mockrabbitmq "github.com/9Neechan/JavaCode-test-task/rabbitmq/mock"
 	"github.com/golang/mock/gomock"
@@ -10,99 +12,198 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestNewRabbitMQ(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+const testAMQPURL = "amqp://guest:guest@localhost:5672/"
+const testQueueName = "test_queue"
 
-	mockConn := &amqp.Connection{} // Заглушка соединения
+// * Не забудьте make rabbitmq
 
-	// Вызов тестируемой функции
-	mq := &RabbitMQ{
-		conn:    mockConn,
-	}
-	require.NotNil(t, mq)
+func TestNewRabbitMQ_Success(t *testing.T) {
+	rmq, err := NewRabbitMQ(testAMQPURL)
+	require.NoError(t, err)
+	require.NotNil(t, rmq)
+	require.NotNil(t, rmq.conn)
+	require.NotNil(t, rmq.channel)
 
-	//_, err := mockConn.Channel()
-	//require.NoError(t, err)
-
-	//err = ch.Qos(50, 0, false)
-	//require.NoError(t, err)
-
+	// Закрываем соединение после теста
+	rmq.Close()
 }
 
-func TestNewRabbitMQ_ErrorDial(t *testing.T) {
-	_, err := NewRabbitMQ("invalid-url")
+func TestNewRabbitMQ_InvalidURL(t *testing.T) {
+	_, err := NewRabbitMQ("amqp://invalid:invalid@localhost:5672/")
+	require.Error(t, err, "должна быть ошибка при неправильном URL")
+}
+
+func TestNewRabbitMQ_QosError(t *testing.T) {
+	rmq, err := NewRabbitMQ(testAMQPURL)
+	require.NoError(t, err)
+
+	// Закрываем канал перед установкой QoS, чтобы вызвать ошибку
+	rmq.channel.Close()
+
+	err = rmq.channel.Qos(50, 0, false)
+	require.Error(t, err, "должна быть ошибка при установке QoS на закрытом канале")
+
+	rmq.Close()
+}
+
+func TestClose(t *testing.T) {
+	rmq, err := NewRabbitMQ(testAMQPURL)
+	require.NoError(t, err)
+
+	// Проверяем, что соединение открыто
+	require.NotNil(t, rmq.conn)
+	require.NotNil(t, rmq.channel)
+
+	// Закрываем соединение
+	rmq.Close()
+
+	// Проверяем, что закрытие не вызывает панику (в реальном коде можно проверять закрыто ли соединение)
+	require.NotNil(t, rmq)
+}
+
+func TestConsumeMessages_NilHandler(t *testing.T) {
+	rmq, err := NewRabbitMQ(testAMQPURL)
+	require.NoError(t, err)
+	defer rmq.Close()
+
+	err = rmq.ConsumeMessages(testQueueName, nil)
 	require.Error(t, err)
+	require.Contains(t, err.Error(), "обработчик не может быть nil")
 }
 
-func TestConsumeMessages(t *testing.T) {
+func TestConsumeMessages_EmptyQueueName(t *testing.T) {
+	rmq, err := NewRabbitMQ(testAMQPURL)
+	require.NoError(t, err)
+	defer rmq.Close()
+
+	err = rmq.ConsumeMessages("", func([]byte) {})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "имя очереди не может быть пустым")
+}
+
+func TestConsumeMessages_Success(t *testing.T) {
+	rmq, err := NewRabbitMQ(testAMQPURL)
+	require.NoError(t, err)
+	defer rmq.Close()
+
+	messageReceived := make(chan []byte, 1)
+
+	handler := func(body []byte) {
+		messageReceived <- body
+	}
+
+	err = rmq.ConsumeMessages(testQueueName, handler)
+	require.NoError(t, err)
+
+	// Публикуем тестовое сообщение
+	testMessage := "Hello, RabbitMQ!"
+	err = rmq.channel.Publish(
+		"",            // exchange
+		testQueueName, // routing key
+		false,         // mandatory
+		false,         // immediate
+		amqp.Publishing{
+			ContentType: "text/plain",
+			Body:        []byte(testMessage),
+		},
+	)
+	require.NoError(t, err)
+
+	select {
+	case received := <-messageReceived:
+		require.Equal(t, testMessage, string(received))
+	case <-time.After(2 * time.Second):
+		t.Fatal("Не получено сообщение за 2 секунды")
+	}
+}
+
+func TestConsumeMessages_ConsumeError_WithMock(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
 	mockChannel := mockrabbitmq.NewMockAMQPChannel(ctrl)
-	queueName := "test_queue"
 
-	mockChannel.EXPECT().QueueDeclare(queueName, true, false, false, false, nil).Return(amqp.Queue{}, nil)
-	msgChan := make(chan amqp.Delivery, 1)
-	msgChan <- amqp.Delivery{Body: []byte(`{"key":"value"}`)}
-	close(msgChan)
+	// Ожидаем вызов QueueDeclare, который должен пройти успешно
+	mockChannel.EXPECT().
+		QueueDeclare(gomock.Any(), true, false, false, false, gomock.Nil()).
+		Return(amqp.Queue{Name: "test_queue"}, nil)
 
-	mockChannel.EXPECT().Consume(queueName, "", true, false, false, false, nil).Return(msgChan, nil)
+	// Ожидаем вызов Consume, который должен вернуть ошибку
+	mockChannel.EXPECT().
+		Consume(gomock.Any(), gomock.Any(), true, false, false, false, gomock.Nil()).
+		Return(nil, errors.New("ошибка получения сообщений"))
 
 	rmq := &RabbitMQ{
 		channel: mockChannel,
 	}
 
-	handlerCalled := false
-	handler := func(msg []byte) {
-		handlerCalled = true
-	}
-
-	err := rmq.ConsumeMessages(queueName, handler)
-	if err != nil {
-		t.Errorf("unexpected error: %v", err)
-	}
-
-	if !handlerCalled {
-		t.Error("handler was not called")
-	}
+	err := rmq.ConsumeMessages("test_queue", func([]byte) {})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "ошибка получения сообщений")
 }
 
-func TestPublishMessage(t *testing.T) {
+func TestPublishMessage_Success(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
 	mockChannel := mockrabbitmq.NewMockAMQPChannel(ctrl)
-	queueName := "test_queue"
+	rmq := &RabbitMQ{
+		channel: mockChannel,
+	}
+
 	message := map[string]string{"key": "value"}
+	body, _ := json.Marshal(message)
 
-	mockChannel.EXPECT().Publish("", queueName, false, false, gomock.Any()).Return(nil)
+	// Ожидаем вызов Publish без ошибок
+	mockChannel.EXPECT().
+		Publish("", "test_queue", false, false, amqp.Publishing{
+			ContentType: "application/json",
+			Body:        body,
+		}).
+		Return(nil)
 
-	rmq := &RabbitMQ{
-		channel: mockChannel,
-	}
-
-	err := rmq.PublishMessage(queueName, message)
-	if err != nil {
-		t.Errorf("unexpected error: %v", err)
-	}
+	err := rmq.PublishMessage("test_queue", message)
+	require.NoError(t, err)
 }
 
-func TestQueueDeclareError(t *testing.T) {
+func TestPublishMessage_Error(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
 	mockChannel := mockrabbitmq.NewMockAMQPChannel(ctrl)
-	queueName := "test_queue"
-
-	mockChannel.EXPECT().QueueDeclare(queueName, true, false, false, false, nil).Return(amqp.Queue{}, errors.New("queue declare error"))
-
 	rmq := &RabbitMQ{
 		channel: mockChannel,
 	}
 
-	err := rmq.ConsumeMessages(queueName, func([]byte) {})
-	if err == nil {
-		t.Error("expected error, got nil")
+	message := map[string]string{"key": "value"}
+	body, _ := json.Marshal(message)
+
+	// Ожидаем вызов Publish, который вернёт ошибку
+	mockChannel.EXPECT().
+		Publish("", "test_queue", false, false, amqp.Publishing{
+			ContentType: "application/json",
+			Body:        body,
+		}).
+		Return(errors.New("ошибка публикации"))
+
+	err := rmq.PublishMessage("test_queue", message)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "ошибка публикации")
+}
+
+func TestPublishMessage_ErrorOnMarshal(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockChannel := mockrabbitmq.NewMockAMQPChannel(ctrl)
+	rmq := &RabbitMQ{
+		channel: mockChannel,
 	}
+
+	// Создаем объект, который вызовет ошибку при сериализации
+	message := make(chan int) // Каналы нельзя сериализовать в JSON
+
+	err := rmq.PublishMessage("test_queue", message)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "json: unsupported type")
 }
