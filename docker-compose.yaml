@@ -21,7 +21,6 @@ services:
         - redis
         - rabbitmq
       entrypoint: ["/app/wait-for.sh", "postgres:5432", "--", "/app/wait-for.sh", "rabbitmq:5672", "--", "/app/start.sh"]
-      #entrypoint: ["/app/wait-for.sh", "postgres:5432","rabbitmq:5672", "--", "/app/start.sh"]
       command: ["./main"]
 
     redis:
