@@ -14,7 +14,7 @@ migratedown:
 	migrate -path db/migration -database "postgresql://root:secret@localhost:5432/wallet_bank?sslmode=disable" -verbose down
 
 rabbitmq:
-	docker run -d --name rabbitmq -p 5672:5672 -p 15672:15672 rabbitmq:3-management
+	docker run -d --name rabbitmq_local -p 5672:5672 -p 15672:15672 rabbitmq:3-management
 
 sqlc:
 	sqlc generate

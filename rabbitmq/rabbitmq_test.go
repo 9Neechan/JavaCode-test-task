@@ -15,7 +15,8 @@ import (
 const testAMQPURL = "amqp://guest:guest@localhost:5672/"
 const testQueueName = "test_queue"
 
-// * Не забудьте make rabbitmq
+// * Не забудьте make rabbitmq + 
+// ! Проверьте что нет конфликта по портам с контейнером запущенным из docker-compose (т.е. он не должен быть запущен)
 
 // TestNewRabbitMQ_Success проверяет успешное создание экземпляра RabbitMQ.
 func TestNewRabbitMQ_Success(t *testing.T) {
