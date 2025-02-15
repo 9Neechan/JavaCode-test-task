@@ -13,6 +13,7 @@ type Server struct {
 	rabbitMQ *rabbitmq.RabbitMQ
 }
 
+// NewServer создает новый сервер с подключением к базе данных и RabbitMQ
 func NewServer(store db.Store, rabbitClient *rabbitmq.RabbitMQ) (*Server, error) {
 	server := &Server{
 		store:    store,
@@ -28,6 +29,7 @@ func NewServer(store db.Store, rabbitClient *rabbitmq.RabbitMQ) (*Server, error)
 	return server, nil
 }
 
+// setupRouter настраивает маршруты для сервера
 func (server *Server) setupRouter() {
 	router := gin.Default()
 
@@ -38,10 +40,12 @@ func (server *Server) setupRouter() {
 	server.router = router
 }
 
+// Start запускает сервер на указанном адресе
 func (server *Server) Start(address string) error {
 	return server.router.Run(address)
 }
 
+// errorResponse формирует ответ с ошибкой в формате JSON
 func errorResponse(err error) gin.H {
 	return gin.H{"error": err.Error()}
 }

@@ -13,6 +13,7 @@ import (
 	_ "github.com/lib/pq"
 )
 
+// getWalletRedis обрабатывает HTTP-запрос для получения баланса кошелька из Redis или БД
 func (server *Server) getWalletRedis(ctx *gin.Context) {
 	var req getWalletRequest
 	if err := ctx.ShouldBindUri(&req); err != nil {

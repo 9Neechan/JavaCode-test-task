@@ -7,34 +7,39 @@ import (
 	"github.com/google/uuid"
 )
 
-// input params of the transfer transaction
+// TransferTxParams содержит параметры для транзакции перевода
 type TransferTxParams struct {
-	Amount        int64     `json:"amount"`
-	WalletUuid    uuid.UUID `json:"wallet_uuid"`
-	OperationType string    `json:"operation_type"`
+	Amount        int64     `json:"amount"`         // Сумма перевода
+	WalletUuid    uuid.UUID `json:"wallet_uuid"`    // UUID кошелька
+	OperationType string    `json:"operation_type"` // Тип операции (DEPOSIT или WITHDRAW)
 }
 
+// TransferTxResult содержит результат транзакции перевода
 type TransferTxResult struct {
-	Balance    int64     `json:"balance"`
-	WalletUuid uuid.UUID `json:"wallet_uuid"`
+	Balance    int64     `json:"balance"`     // Баланс кошелька после транзакции
+	WalletUuid uuid.UUID `json:"wallet_uuid"` // UUID кошелька
 }
 
+// txKey используется для хранения имени транзакции в контексте
 var txKey = struct{}{}
 
+// TransferTx выполняет транзакцию перевода с заданными параметрами и возвращает результат или ошибку
 func (store *SQLStore) TransferTx(ctx context.Context, arg TransferTxParams) (TransferTxResult, error) {
 	var result TransferTxResult
 
+	// Выполняем транзакцию в рамках функции execTx
 	err := store.execTx(ctx, func(q *Queries) error {
 		var err error
-		txName := ctx.Value(txKey)
+		txName := ctx.Value(txKey) // Получаем имя транзакции из контекста
 
+		// Создаем параметры для обновления баланса кошелька
 		params := UpdateWalletBalanceParams{
 			Amount:     arg.Amount,
 			WalletUuid: arg.WalletUuid,
 		}
 
 		if arg.OperationType == "WITHDRAW" {
-			fmt.Println(txName, "getting wallet from db")
+			fmt.Println(txName, "getting wallet from db") // Получаем кошелек из базы данных
 			wallet, err := q.GetWallet(ctx, params.WalletUuid)
 			if err != nil {
 				return err
@@ -52,10 +57,8 @@ func (store *SQLStore) TransferTx(ctx context.Context, arg TransferTxParams) (Tr
 			return err
 		}
 
-		fmt.Println("00000", wallet_result)
-
-		result.Balance = wallet_result.Balance
-		result.WalletUuid = wallet_result.WalletUuid
+		result.Balance = wallet_result.Balance       // Устанавливаем баланс в результат
+		result.WalletUuid = wallet_result.WalletUuid // Устанавливаем UUID кошелька в результат
 
 		return err
 	})

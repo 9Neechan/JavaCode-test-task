@@ -1,3 +1,4 @@
 backup.txt
 .DS_Store
 rabbitmq/rabbitmq_mock_test.go
+test.js/

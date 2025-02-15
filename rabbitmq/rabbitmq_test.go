@@ -17,6 +17,7 @@ const testQueueName = "test_queue"
 
 // * Не забудьте make rabbitmq
 
+// TestNewRabbitMQ_Success проверяет успешное создание экземпляра RabbitMQ.
 func TestNewRabbitMQ_Success(t *testing.T) {
 	rmq, err := NewRabbitMQ(testAMQPURL)
 	require.NoError(t, err)
@@ -28,11 +29,13 @@ func TestNewRabbitMQ_Success(t *testing.T) {
 	rmq.Close()
 }
 
+// TestNewRabbitMQ_InvalidURL проверяет создание экземпляра RabbitMQ с неправильным URL.
 func TestNewRabbitMQ_InvalidURL(t *testing.T) {
 	_, err := NewRabbitMQ("amqp://invalid:invalid@localhost:5672/")
 	require.Error(t, err, "должна быть ошибка при неправильном URL")
 }
 
+// TestNewRabbitMQ_QosError проверяет установку QoS на закрытом канале.
 func TestNewRabbitMQ_QosError(t *testing.T) {
 	rmq, err := NewRabbitMQ(testAMQPURL)
 	require.NoError(t, err)
@@ -46,6 +49,7 @@ func TestNewRabbitMQ_QosError(t *testing.T) {
 	rmq.Close()
 }
 
+// TestClose проверяет закрытие соединения RabbitMQ.
 func TestClose(t *testing.T) {
 	rmq, err := NewRabbitMQ(testAMQPURL)
 	require.NoError(t, err)
@@ -61,6 +65,7 @@ func TestClose(t *testing.T) {
 	require.NotNil(t, rmq)
 }
 
+// TestConsumeMessages_NilHandler проверяет обработку сообщений с nil-обработчиком.
 func TestConsumeMessages_NilHandler(t *testing.T) {
 	rmq, err := NewRabbitMQ(testAMQPURL)
 	require.NoError(t, err)
@@ -71,6 +76,7 @@ func TestConsumeMessages_NilHandler(t *testing.T) {
 	require.Contains(t, err.Error(), "обработчик не может быть nil")
 }
 
+// TestConsumeMessages_EmptyQueueName проверяет обработку сообщений с пустым именем очереди.
 func TestConsumeMessages_EmptyQueueName(t *testing.T) {
 	rmq, err := NewRabbitMQ(testAMQPURL)
 	require.NoError(t, err)
@@ -81,6 +87,7 @@ func TestConsumeMessages_EmptyQueueName(t *testing.T) {
 	require.Contains(t, err.Error(), "имя очереди не может быть пустым")
 }
 
+// TestConsumeMessages_Success проверяет успешную обработку сообщений.
 func TestConsumeMessages_Success(t *testing.T) {
 	rmq, err := NewRabbitMQ(testAMQPURL)
 	require.NoError(t, err)
@@ -117,6 +124,7 @@ func TestConsumeMessages_Success(t *testing.T) {
 	}
 }
 
+// TestConsumeMessages_ConsumeError_WithMock проверяет обработку ошибки при получении сообщений с помощью mock.
 func TestConsumeMessages_ConsumeError_WithMock(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -142,6 +150,7 @@ func TestConsumeMessages_ConsumeError_WithMock(t *testing.T) {
 	require.Contains(t, err.Error(), "ошибка получения сообщений")
 }
 
+// TestPublishMessage_Success проверяет успешную публикацию сообщения.
 func TestPublishMessage_Success(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -166,6 +175,7 @@ func TestPublishMessage_Success(t *testing.T) {
 	require.NoError(t, err)
 }
 
+// TestPublishMessage_Error проверяет публикацию сообщения с ошибкой.
 func TestPublishMessage_Error(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -191,6 +201,7 @@ func TestPublishMessage_Error(t *testing.T) {
 	require.Contains(t, err.Error(), "ошибка публикации")
 }
 
+// TestPublishMessage_ErrorOnMarshal проверяет публикацию сообщения с ошибкой сериализации.
 func TestPublishMessage_ErrorOnMarshal(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()

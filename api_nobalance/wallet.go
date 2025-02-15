@@ -10,6 +10,7 @@ import (
 	_ "github.com/lib/pq"
 )
 
+// getWallet обрабатывает HTTP-запрос для получения баланса кошелька по UUID
 func (server *Server) getWallet(ctx *gin.Context) {
 	var req getWalletRequest
 	if err := ctx.ShouldBindUri(&req); err != nil {
@@ -42,6 +43,7 @@ func (server *Server) getWallet(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, wallet.Balance)
 }
 
+// updateWalletBalance обрабатывает HTTP-запрос для обновления баланса кошелька
 func (server *Server) updateWalletBalance(ctx *gin.Context) {
 	var req UpdateWalletBalanceRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {

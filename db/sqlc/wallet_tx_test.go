@@ -9,6 +9,7 @@ import (
 )
 
 // Тест на успешный депозит (DEPOSIT)
+// Проверяет, что депозит средств на кошелек происходит успешно и баланс увеличивается на сумму депозита.
 func TestTransferTx_Deposit(t *testing.T) {
 	wallet := createRandomWallet(t)
 	store := NewStore(testDB)
@@ -34,6 +35,7 @@ func TestTransferTx_Deposit(t *testing.T) {
 }
 
 // Тест на успешное снятие средств (WITHDRAW)
+// Проверяет, что снятие средств с кошелька происходит успешно и баланс уменьшается на сумму вывода.
 func TestTransferTx_Withdraw(t *testing.T) {
 	store := NewStore(testDB)
 
@@ -67,6 +69,7 @@ func TestTransferTx_Withdraw(t *testing.T) {
 }
 
 // Тест на недостаток средств при снятии
+// Проверяет, что при снятии средств с кошелька, если средств недостаточно, возвращается ошибка "Недостаточно средств".
 func TestTransferTx_InsufficientFunds(t *testing.T) {
 	store := NewStore(testDB)
 

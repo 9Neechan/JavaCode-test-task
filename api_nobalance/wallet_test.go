@@ -20,6 +20,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// randomWallet создает случайный объект Wallet для тестирования
 func randomWallet() db.Wallet {
 	return db.Wallet{
 		WalletUuid: util.RandomUUID(),
@@ -27,6 +28,7 @@ func randomWallet() db.Wallet {
 	}
 }
 
+// requireBodyMatchWallet проверяет, что тело ответа совпадает с ожидаемым объектом Wallet
 func requireBodyMatchWallet(t *testing.T, body *bytes.Buffer, wallet db.Wallet) {
 	data, err := io.ReadAll(body)
 	require.NoError(t, err)
@@ -36,6 +38,7 @@ func requireBodyMatchWallet(t *testing.T, body *bytes.Buffer, wallet db.Wallet) 
 	require.Equal(t, wallet.Balance, balance)
 }
 
+// TestGetWalletAPI тестирует API для получения информации о кошельке
 func TestGetWalletAPI(t *testing.T) {
 	wallet := randomWallet()
 
@@ -130,6 +133,7 @@ func TestGetWalletAPI(t *testing.T) {
 	}
 }
 
+// TestGetWalletAPI2 тестирует API для получения информации о кошельке с некорректным UUID
 func TestGetWalletAPI2(t *testing.T) {
 	testCases := []struct {
 		name       string
@@ -175,6 +179,7 @@ func TestGetWalletAPI2(t *testing.T) {
 	}
 }
 
+// TestUpdateWalletBalanceAPI тестирует API для обновления баланса кошелька
 func TestUpdateWalletBalanceAPI(t *testing.T) {
 	wallet := randomWallet()
 

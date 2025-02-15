@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// createRandomWallet создает случайный кошелек для тестирования.
 func createRandomWallet(t *testing.T) Wallet {
 	balance := util.RandomMoney()
 
@@ -25,10 +26,12 @@ func createRandomWallet(t *testing.T) Wallet {
 	return wallet
 }
 
+// TestCreateWallet проверяет создание кошелька.
 func TestCreateWallet(t *testing.T) {
 	createRandomWallet(t)
 }
 
+// TestGetWallet проверяет получение кошелька по его UUID.
 func TestGetWallet(t *testing.T) {
 	wallet1 := createRandomWallet(t)
 	wallet2, err := testQueries.GetWallet(context.Background(), wallet1.WalletUuid)
@@ -42,6 +45,7 @@ func TestGetWallet(t *testing.T) {
 	require.WithinDuration(t, wallet1.CreatedAt, wallet2.CreatedAt, time.Second)
 }
 
+// TestUpdateWalletBalance проверяет обновление баланса кошелька.
 func TestUpdateWalletBalance(t *testing.T) {
 	wallet1 := createRandomWallet(t)
 

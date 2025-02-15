@@ -8,9 +8,11 @@ import (
 
 type Store interface {
 	Querier
+	// TransferTx выполняет транзакцию перевода с заданными параметрами и возвращает результат или ошибку
 	TransferTx(ctx context.Context, arg TransferTxParams) (TransferTxResult, error)
 }
 
+// NewStore создает новый экземпляр Store с использованием переданной базы данных
 func NewStore(db *sql.DB) Store {
 	return &SQLStore{
 		db:      db,
@@ -18,13 +20,14 @@ func NewStore(db *sql.DB) Store {
 	}
 }
 
-// provides all funcs to exec db queries and transactions
-// composition for extending Queries functionality
+// SQLStore предоставляет все функции для выполнения запросов и транзакций в базе данных
+// Использует композицию для расширения функциональности Queries
 type SQLStore struct {
 	*Queries
 	db *sql.DB
 }
 
+// NewSQLStore создает новый экземпляр SQLStore с использованием переданной базы данных
 func NewSQLStore(db *sql.DB) *SQLStore {
 	return &SQLStore{
 		db:      db,
@@ -32,7 +35,7 @@ func NewSQLStore(db *sql.DB) *SQLStore {
 	}
 }
 
-// executes a function within a db transaction
+// execTx выполняет функцию в рамках транзакции базы данных
 func (store *SQLStore) execTx(ctx context.Context, fn func(*Queries) error) error {
 	tx, err := store.db.BeginTx(ctx, nil)
 	if err != nil {

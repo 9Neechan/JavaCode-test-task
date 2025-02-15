@@ -25,6 +25,7 @@ type RabbitMQ struct {
 	//store   db.Store
 }
 
+// NewRabbitMQ создает новый экземпляр RabbitMQ, подключаясь к RabbitMQ по указанному URL.
 func NewRabbitMQ(amqpURL string) (*RabbitMQ, error) {
 	conn, err := amqp.Dial(amqpURL)
 	if err != nil {
@@ -36,11 +37,10 @@ func NewRabbitMQ(amqpURL string) (*RabbitMQ, error) {
 		return nil, err
 	}
 
-	//!!!!!!!!!!!!!
+	// Устанавливаем QoS для канала, ограничивая количество сообщений в очереди до 50.
 	err = ch.Qos(50, 0, false) // Обработчик берет до 50 сообщений сразу
 	if err != nil {
 		return nil, fmt.Errorf("Ошибка установки QoS: %s", err)
-		//log.Fatalf("Ошибка установки QoS: %s", err)
 	}
 
 	return &RabbitMQ{
@@ -49,12 +49,13 @@ func NewRabbitMQ(amqpURL string) (*RabbitMQ, error) {
 	}, nil
 }
 
+// Close закрывает канал и соединение RabbitMQ.
 func (r *RabbitMQ) Close() {
 	r.channel.Close()
 	r.conn.Close()
 }
 
-// ConsumeMessages слушает очередь и обрабатывает сообщения
+// ConsumeMessages слушает очередь и обрабатывает сообщения.
 func (r *RabbitMQ) ConsumeMessages(queueName string, handler func([]byte)) error {
 	// Проверка на nil-обработчик
 	if handler == nil {
@@ -103,7 +104,7 @@ func (r *RabbitMQ) ConsumeMessages(queueName string, handler func([]byte)) error
 	return nil
 }
 
-// ✅ Реализуем метод PublishMessage
+// PublishMessage публикует сообщение в очередь RabbitMQ.
 func (r *RabbitMQ) PublishMessage(queueName string, message interface{}) error {
 	body, err := json.Marshal(message)
 	if err != nil {

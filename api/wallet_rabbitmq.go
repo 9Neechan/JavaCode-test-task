@@ -13,6 +13,7 @@ import (
 	"github.com/google/uuid"
 )
 
+// updateWalletBalanceRabbitmq обрабатывает HTTP-запрос для обновления баланса кошелька через RabbitMQ
 func (server *Server) updateWalletBalanceRabbitmq(ctx *gin.Context) {
 	var req UpdateWalletBalanceRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -44,7 +45,7 @@ func (server *Server) processUpdateWallet(msg []byte) {
 	server.handleWalletUpdate(req)
 }
 
-// handleWalletUpdate выполняет обновление баланса в БД
+// handleWalletUpdate выполняет обновление баланса в БД и обновляет кэш
 func (server *Server) handleWalletUpdate(req UpdateWalletBalanceRequest) {
 	parsedUUID, err := uuid.Parse(req.WalletUuid)
 	if err != nil || parsedUUID == uuid.Nil {
@@ -63,8 +64,7 @@ func (server *Server) handleWalletUpdate(req UpdateWalletBalanceRequest) {
 		fmt.Println("Ошибка обновления баланса в БД:", err)
 	}
 
-	//!!!!!!!!!!!!!
-	// Update cache
+	// Обновляем кэш
 	cacheKey := fmt.Sprintf("wallet:%s", parsedUUID.String())
 	err = redis_cache.RedisClient.Set(context.Background(), cacheKey, result.Balance, 5*time.Second).Err()
 	if err != nil {
